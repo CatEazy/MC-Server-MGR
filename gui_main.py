@@ -1470,94 +1470,98 @@ class PluginInterface(QWidget):
         
         layout.addLayout(header_layout)
         
-        # 使用Fluent Design风格的切换按钮
-        tab_button_layout = QHBoxLayout()
-        
-        # 创建按钮组容器
-        button_container = SimpleCardWidget(self)
-        button_container.setFixedHeight(50)
-        container_layout = QHBoxLayout(button_container)
-        container_layout.setContentsMargins(5, 5, 5, 5)
-        container_layout.setSpacing(5)
-        
-        self.installed_button = PushButton("已安装插件", self)
-        self.installed_button.setFixedHeight(40)
-        self.installed_button.clicked.connect(lambda: self.switch_tab(0))
-        
-        self.available_button = PushButton("可用插件", self)
-        self.available_button.setFixedHeight(40)
-        self.available_button.clicked.connect(lambda: self.switch_tab(1))
-        
-        container_layout.addWidget(self.installed_button)
-        container_layout.addWidget(self.available_button)
-        container_layout.addStretch()
-        
-        tab_button_layout.addWidget(button_container)
-        tab_button_layout.addStretch()
-        
-        layout.addLayout(tab_button_layout)
-        
-        # 创建堆叠widget来模拟选项卡
-        from PyQt5.QtWidgets import QStackedWidget
-        self.stacked_widget = QStackedWidget(self)
+        # 使用qfluentwidgets的原生组件
+        try:
+            # 尝试使用SegmentedWidget
+            from qfluentwidgets import SegmentedWidget
+            self.tab_widget = SegmentedWidget(self)
+            self.tab_widget.addItem("已安装插件", "已安装插件")
+            self.tab_widget.addItem("可用插件", "可用插件")
+            self.tab_widget.currentItemChanged.connect(self.on_tab_changed)
+            layout.addWidget(self.tab_widget)
+            self.use_segmented = True
+        except ImportError:
+            try:
+                # 尝试使用Pivot
+                from qfluentwidgets import Pivot
+                self.tab_widget = Pivot(self)
+                self.tab_widget.addItem("installed", "已安装插件", self.installed_tab)
+                self.tab_widget.addItem("available", "可用插件", self.available_tab)
+                self.tab_widget.currentItemChanged.connect(self.on_pivot_changed)
+                layout.addWidget(self.tab_widget)
+                self.use_segmented = False
+            except ImportError:
+                # 使用简化的按钮组
+                self.create_simple_tab_buttons(layout)
+                self.use_segmented = None
         
         # 已安装插件页面
         self.installed_tab = QWidget()
         self.init_installed_tab()
-        self.stacked_widget.addWidget(self.installed_tab)
         
         # 可用插件页面
         self.available_tab = QWidget()
         self.init_available_tab()
-        self.stacked_widget.addWidget(self.available_tab)
         
-        # 默认显示已安装插件
-        self.stacked_widget.setCurrentIndex(0)
-        # 初始化按钮样式
-        self.switch_tab(0)
+        # 根据使用的组件类型决定布局
+        if self.use_segmented is not None:
+            # 使用SegmentedWidget或Pivot时，创建堆叠widget
+            from PyQt5.QtWidgets import QStackedWidget
+            self.stacked_widget = QStackedWidget(self)
+            self.stacked_widget.addWidget(self.installed_tab)
+            self.stacked_widget.addWidget(self.available_tab)
+            self.stacked_widget.setCurrentIndex(0)
+            layout.addWidget(self.stacked_widget)
+        # 如果使用Pivot，页面已经自动管理，不需要额外的stacked_widget
+    
+    def create_simple_tab_buttons(self, layout):
+        """创建简单的选项卡按钮（备用方案）"""
+        # 使用HeaderCardWidget作为容器，看起来更协调
+        tab_card = HeaderCardWidget(self)
+        tab_card.setTitle("插件类型")
         
-        layout.addWidget(self.stacked_widget)
+        button_layout = QHBoxLayout()
+        
+        self.installed_button = PushButton("已安装插件", self)
+        self.available_button = PushButton("可用插件", self)
+        
+        self.installed_button.clicked.connect(lambda: self.switch_tab(0))
+        self.available_button.clicked.connect(lambda: self.switch_tab(1))
+        
+        button_layout.addWidget(self.installed_button)
+        button_layout.addWidget(self.available_button)
+        button_layout.addStretch()
+        
+        tab_card.viewLayout.addLayout(button_layout)
+        layout.addWidget(tab_card)
+        
+        self.use_segmented = None
+    
+    def on_tab_changed(self, item_key):
+        """SegmentedWidget选项卡改变"""
+        if hasattr(self, 'stacked_widget'):
+            if item_key == "已安装插件":
+                self.stacked_widget.setCurrentIndex(0)
+            else:
+                self.stacked_widget.setCurrentIndex(1)
+    
+    def on_pivot_changed(self, item_key):
+        """Pivot选项卡改变"""
+        # Pivot会自动管理页面切换
+        pass
     
     def switch_tab(self, index):
-        """切换选项卡"""
-        self.stacked_widget.setCurrentIndex(index)
-        
-        # 更新按钮样式 - 使用Fluent Design风格
-        active_style = """
-            PushButton {
-                background-color: #0078d4;
-                color: white;
-                border: 2px solid #0078d4;
-                border-radius: 6px;
-                font-weight: bold;
-                padding: 8px 16px;
-            }
-            PushButton:hover {
-                background-color: #106ebe;
-                border-color: #106ebe;
-            }
-        """
-        
-        inactive_style = """
-            PushButton {
-                background-color: transparent;
-                color: #323130;
-                border: 2px solid #e1dfdd;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }
-            PushButton:hover {
-                background-color: #f3f2f1;
-                border-color: #c8c6c4;
-            }
-        """
-        
-        if index == 0:
-            self.installed_button.setStyleSheet(active_style)
-            self.available_button.setStyleSheet(inactive_style)
-        else:
-            self.installed_button.setStyleSheet(inactive_style)
-            self.available_button.setStyleSheet(active_style)
+        """切换选项卡（备用方案）"""
+        if hasattr(self, 'stacked_widget'):
+            self.stacked_widget.setCurrentIndex(index)
+            
+            # 简化的按钮样式
+            if index == 0:
+                self.installed_button.setStyleSheet("background-color: #0078d4; color: white; border-radius: 4px;")
+                self.available_button.setStyleSheet("")
+            else:
+                self.installed_button.setStyleSheet("")
+                self.available_button.setStyleSheet("background-color: #0078d4; color: white; border-radius: 4px;")
     
     def init_installed_tab(self):
         """初始化已安装插件选项卡"""

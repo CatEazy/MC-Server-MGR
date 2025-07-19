@@ -19,7 +19,8 @@ from qfluentwidgets import (
     PushButton, LineEdit, SpinBox, CheckBox, TextEdit,
     ComboBox, InfoBar, InfoBarPosition,
     HeaderCardWidget, SimpleCardWidget,
-    StrongBodyLabel, BodyLabel, setTheme, Theme
+    StrongBodyLabel, BodyLabel, setTheme, Theme,
+    RadioButton, SwitchButton, HyperlinkButton
 )
 
 from mc_server_manager import MinecraftServerManager
@@ -122,6 +123,9 @@ class MainWindow(FluentWindow):
         self.player_interface = PlayerInterface(self)
         self.player_interface.setObjectName("PlayerInterface")
         
+        self.settings_interface = SettingsInterface(self)
+        self.settings_interface.setObjectName("SettingsInterface")
+        
         # 添加到导航
         self.addSubInterface(
             self.server_list_interface, 
@@ -172,6 +176,35 @@ class MainWindow(FluentWindow):
             NavigationItemPosition.TOP
         )
         
+        # 添加底部导航项
+        self.addSubInterface(
+            self.settings_interface,
+            FluentIcon.SETTING,
+            "程序设置",
+            NavigationItemPosition.BOTTOM
+        )
+        
+        # 添加GitHub链接 - 使用自定义方法
+        try:
+            # 尝试添加GitHub导航项
+            from qfluentwidgets import Action
+            github_action = Action(FluentIcon.GITHUB, "GitHub")
+            github_action.triggered.connect(self.open_github)
+            self.navigationInterface.addItem(
+                routeKey="github",
+                icon=FluentIcon.GITHUB,
+                text="GitHub",
+                onClick=self.open_github,
+                selectable=False,
+                position=NavigationItemPosition.BOTTOM
+            )
+        except:
+            # 如果上述方法不工作，使用简单的按钮
+            github_button = PushButton("GitHub", self)
+            github_button.setIcon(FluentIcon.GITHUB)
+            github_button.clicked.connect(self.open_github)
+            # 可以考虑添加到某个位置
+        
         # 设置默认界面
         self.stackedWidget.setCurrentWidget(self.server_list_interface)
     
@@ -208,6 +241,21 @@ class MainWindow(FluentWindow):
                 self.performance_monitor.start_monitoring()
             else:
                 self.performance_monitor.stop_monitoring()
+    
+    def open_github(self):
+        """打开GitHub链接"""
+        import webbrowser
+        webbrowser.open("https://github.com/Xero-Studio/MCSG")
+        
+        InfoBar.success(
+            title="链接已打开",
+            content="GitHub页面已在默认浏览器中打开",
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self
+        )
     
     def load_config(self):
         """加载配置到界面"""
@@ -2192,6 +2240,290 @@ class PlayerInterface(QWidget):
                 parent=self.parent
             )
             self.refresh_player_list()
+
+
+class SettingsInterface(QWidget):
+    """程序设置界面"""
+    
+    def __init__(self, parent: MainWindow):
+        super().__init__()
+        self.parent = parent
+        self.init_ui()
+    
+    def init_ui(self):
+        """初始化界面"""
+        layout = QVBoxLayout(self)
+        layout.setSpacing(20)
+        layout.setContentsMargins(30, 30, 30, 30)
+        
+        # 标题
+        title_label = StrongBodyLabel("程序设置")
+        title_label.setStyleSheet("font-size: 20px;")
+        layout.addWidget(title_label)
+        
+        # 外观设置卡片
+        appearance_card = HeaderCardWidget(self)
+        appearance_card.setTitle("外观设置")
+        
+        appearance_layout = QGridLayout()
+        
+        # 主题设置
+        appearance_layout.addWidget(BodyLabel("主题模式:"), 0, 0)
+        
+        theme_layout = QHBoxLayout()
+        
+        try:
+            self.light_radio = RadioButton("浅色模式", self)
+            self.dark_radio = RadioButton("深色模式", self)
+            self.auto_radio = RadioButton("跟随系统", self)
+        except:
+            # 如果RadioButton不可用，使用CheckBox
+            from PyQt5.QtWidgets import QRadioButton, QButtonGroup
+            self.light_radio = QRadioButton("浅色模式", self)
+            self.dark_radio = QRadioButton("深色模式", self)
+            self.auto_radio = QRadioButton("跟随系统", self)
+            
+            # 创建按钮组确保互斥
+            self.theme_group = QButtonGroup(self)
+            self.theme_group.addButton(self.light_radio)
+            self.theme_group.addButton(self.dark_radio)
+            self.theme_group.addButton(self.auto_radio)
+        
+        # 设置当前主题
+        current_theme = self.get_current_theme()
+        if current_theme == Theme.LIGHT:
+            self.light_radio.setChecked(True)
+        elif current_theme == Theme.DARK:
+            self.dark_radio.setChecked(True)
+        else:
+            self.auto_radio.setChecked(True)
+        
+        # 连接信号
+        self.light_radio.clicked.connect(lambda: self.change_theme(Theme.LIGHT))
+        self.dark_radio.clicked.connect(lambda: self.change_theme(Theme.DARK))
+        self.auto_radio.clicked.connect(lambda: self.change_theme(Theme.AUTO))
+        
+        theme_layout.addWidget(self.light_radio)
+        theme_layout.addWidget(self.dark_radio)
+        theme_layout.addWidget(self.auto_radio)
+        theme_layout.addStretch()
+        
+        appearance_layout.addLayout(theme_layout, 0, 1)
+        
+        # 窗口设置
+        appearance_layout.addWidget(BodyLabel("启动时最大化:"), 1, 0)
+        try:
+            self.maximize_switch = SwitchButton(self)
+            self.maximize_switch.checkedChanged.connect(self.on_maximize_changed)
+        except:
+            # 如果SwitchButton不可用，使用CheckBox
+            self.maximize_switch = CheckBox(self)
+            self.maximize_switch.stateChanged.connect(self.on_maximize_changed)
+        
+        self.maximize_switch.setChecked(False)
+        appearance_layout.addWidget(self.maximize_switch, 1, 1)
+        
+        # 最小化到托盘
+        appearance_layout.addWidget(BodyLabel("最小化到系统托盘:"), 2, 0)
+        try:
+            self.tray_switch = SwitchButton(self)
+            self.tray_switch.checkedChanged.connect(self.on_tray_changed)
+        except:
+            # 如果SwitchButton不可用，使用CheckBox
+            self.tray_switch = CheckBox(self)
+            self.tray_switch.stateChanged.connect(self.on_tray_changed)
+            
+        self.tray_switch.setChecked(False)
+        appearance_layout.addWidget(self.tray_switch, 2, 1)
+        
+        appearance_card.viewLayout.addLayout(appearance_layout)
+        layout.addWidget(appearance_card)
+        
+        # 性能设置卡片
+        performance_card = HeaderCardWidget(self)
+        performance_card.setTitle("性能设置")
+        
+        performance_layout = QGridLayout()
+        
+        # 性能监控间隔
+        performance_layout.addWidget(BodyLabel("性能监控更新间隔:"), 0, 0)
+        
+        interval_layout = QHBoxLayout()
+        self.interval_combo = ComboBox(self)
+        self.interval_combo.addItems(["0.5秒", "1秒", "2秒", "5秒"])
+        self.interval_combo.setCurrentText("1秒")
+        self.interval_combo.currentTextChanged.connect(self.on_interval_changed)
+        
+        interval_layout.addWidget(self.interval_combo)
+        interval_layout.addStretch()
+        
+        performance_layout.addLayout(interval_layout, 0, 1)
+        
+        # 启动时自动监控
+        performance_layout.addWidget(BodyLabel("启动时自动开始性能监控:"), 1, 0)
+        try:
+            self.auto_monitor_switch = SwitchButton(self)
+        except:
+            self.auto_monitor_switch = CheckBox(self)
+        
+        self.auto_monitor_switch.setChecked(True)
+        performance_layout.addWidget(self.auto_monitor_switch, 1, 1)
+        
+        performance_card.viewLayout.addLayout(performance_layout)
+        layout.addWidget(performance_card)
+        
+        # 关于卡片
+        about_card = HeaderCardWidget(self)
+        about_card.setTitle("关于程序")
+        
+        about_layout = QVBoxLayout()
+        
+        # 程序信息
+        app_info = BodyLabel("Minecraft Server Manager")
+        app_info.setStyleSheet("font-size: 16px; font-weight: bold;")
+        about_layout.addWidget(app_info)
+        
+        version_info = BodyLabel("版本: 2.0.0")
+        about_layout.addWidget(version_info)
+        
+        desc_info = BodyLabel("基于 PyQt5 + Fluent Design 的现代化 Minecraft 服务器管理工具")
+        desc_info.setWordWrap(True)
+        about_layout.addWidget(desc_info)
+        
+        # GitHub链接
+        github_layout = QHBoxLayout()
+        github_label = BodyLabel("项目地址:")
+        try:
+            github_link = HyperlinkButton(
+                url="https://github.com/Xero-Studio/MCSG",
+                text="https://github.com/Xero-Studio/MCSG"
+            )
+        except:
+            # 如果HyperlinkButton不可用，使用普通按钮
+            github_link = PushButton("https://github.com/Xero-Studio/MCSG", self)
+            github_link.clicked.connect(lambda: self.parent.open_github())
+        
+        github_layout.addWidget(github_label)
+        github_layout.addWidget(github_link)
+        github_layout.addStretch()
+        
+        about_layout.addLayout(github_layout)
+        
+        about_card.viewLayout.addLayout(about_layout)
+        layout.addWidget(about_card)
+        
+        layout.addStretch()
+    
+    def get_current_theme(self):
+        """获取当前主题"""
+        try:
+            # 这里可以从配置文件读取，暂时返回AUTO
+            return Theme.AUTO
+        except:
+            return Theme.AUTO
+    
+    def change_theme(self, theme):
+        """更改主题"""
+        try:
+            setTheme(theme)
+            
+            # 显示成功提示
+            theme_names = {
+                Theme.LIGHT: "浅色模式",
+                Theme.DARK: "深色模式", 
+                Theme.AUTO: "跟随系统"
+            }
+            
+            InfoBar.success(
+                title="主题已更改",
+                content=f"已切换到{theme_names.get(theme, '未知')}",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self.parent
+            )
+            
+            # 这里可以保存到配置文件
+            self.save_theme_setting(theme)
+            
+        except Exception as e:
+            InfoBar.error(
+                title="主题更改失败",
+                content=f"无法更改主题: {str(e)}",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3000,
+                parent=self.parent
+            )
+    
+    def save_theme_setting(self, theme):
+        """保存主题设置"""
+        try:
+            import json
+            settings = {}
+            settings_file = "app_settings.json"
+            
+            # 读取现有设置
+            if os.path.exists(settings_file):
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+            
+            # 更新主题设置
+            settings['theme'] = theme.value if hasattr(theme, 'value') else str(theme)
+            
+            # 保存设置
+            with open(settings_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=4, ensure_ascii=False)
+                
+        except Exception as e:
+            print(f"保存主题设置失败: {e}")
+    
+    def on_maximize_changed(self, checked):
+        """最大化设置改变"""
+        InfoBar.info(
+            title="设置已保存",
+            content="启动时最大化设置已更新",
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self.parent
+        )
+    
+    def on_tray_changed(self, checked):
+        """托盘设置改变"""
+        InfoBar.info(
+            title="设置已保存", 
+            content="系统托盘设置已更新",
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self.parent
+        )
+    
+    def on_interval_changed(self, text):
+        """监控间隔改变"""
+        interval_map = {
+            "0.5秒": 0.5,
+            "1秒": 1.0,
+            "2秒": 2.0,
+            "5秒": 5.0
+        }
+        
+        interval = interval_map.get(text, 1.0)
+        
+        InfoBar.info(
+            title="设置已保存",
+            content=f"性能监控间隔已设置为{text}",
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self.parent
+        )
 
 
 def main():

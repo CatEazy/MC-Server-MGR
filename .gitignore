@@ -1,59 +1,355 @@
-# Minecraft Server Manager - Python版本
+# ===== MC Server Manager - 完整的 .gitignore =====
 
-# 配置文件
-Config.ini
-Config.txt
+# ===== Python 相关 =====
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Minecraft服务器文件
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+# Keep our custom spec file, but ignore generated ones
+# *.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ===== 构建工具相关 =====
+# Nuitka (已废弃)
+nuitka-build.cfg
+.nuitka/
+*.build/
+*.dist/
+*.onefile-build/
+
+# PyInstaller 构建输出
+dist/
+dist-standalone/
+
+# 其他构建工具
+.pybuilder/
+target/
+
+# ===== Minecraft 服务器文件 =====
+# 服务器核心文件
 server.jar
 *.jar
+
+# 服务器配置文件
 server.properties
 eula.txt
-world/
-logs/
-crash-reports/
 banned-*.json
 ops.json
 whitelist.json
 usercache.json
 usernamecache.json
 
-# Python缓存
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+# 世界文件
+world/
+world_*/
+DIM-1/
+DIM1/
 
-# 构建输出
-dist/
-dist-standalone/
-build/
-*.dist/
-*.build/
-*.onefile-build/
+# 服务器日志和缓存
+logs/
+cache/
+crash-reports/
 
-# Nuitka缓存
-.nuitka/
+# 插件和模组
+plugins/
+mods/
 
-# 打包文件
-*.exe
-*.zip
-*.tar.gz
-mc-server-manager*
+# 服务器数据目录
+servers/
+Servers/
 
+# ===== 应用程序数据文件 =====
+# 配置文件
+Config.ini
+Config.txt
+server_config.json
+servers.json
+server_templates.json
+plugin_cache.json
+player_data.json
+app_settings.json
+
+# 备份文件
+backups/
+*.backup
+*.bak
+*.old
+
+# ===== 临时和测试文件 =====
 # 临时文件
+tmp_*
+temp_*
+test_*
+debug_*
+temp/
+*.tmp
+*.temp
+
+# RovoDev 临时文件
 tmp_rovodev_*
 tmp_code_*
 
-# IDE文件
+# ===== IDE 和编辑器文件 =====
+# Visual Studio Code
 .vscode/
+*.code-workspace
+
+# PyCharm
 .idea/
+
+# Sublime Text
+*.sublime-*
+
+# Vim
 *.swp
 *.swo
+*~
 
-# 系统文件
-.DS_Store
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== 操作系统文件 =====
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# 日志文件
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== 日志文件 =====
 *.log
+*.log.*
+*.out
+*.err
+
+# ===== 数据库文件 =====
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ===== 压缩文件 =====
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# ===== 可执行文件 =====
+*.exe
+*.app
+*.deb
+*.rpm
+*.dmg
+
+# ===== 媒体文件 (通常不需要版本控制) =====
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mp3
+*.wav
+*.ogg
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ico
+*.svg
+
+# ===== 文档文件 (编译生成的) =====
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+
+# ===== 证书和密钥文件 =====
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# ===== 网络和配置文件 =====
+*.conf
+*.ini
+*.cfg
+*.config
+*.properties
+*.yaml
+*.yml
+*.toml
+
+# 但保留我们需要的配置文件
+!requirements.txt
+!MinecraftServerManager.spec
+!.github/
+
+# ===== 本地开发文件 =====
+local_*
+dev_*
+development.*
+.local/
+.cache/
+
+# ===== 包管理器文件 =====
+node_modules/
+package-lock.json
+yarn.lock
+
+# ===== 其他工具生成的文件 =====
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.black/
+
+# ===== 自定义忽略 =====
+# 用户自定义的本地文件
+*.local
+*.private
+*.secret
+
+# 测试输出
+test_output/
+test_results/
+
+# 性能分析文件
+*.prof
+*.profile
+
+# 内存转储文件
+*.dump
+*.hprof
+
+# 编译器输出
+*.o
+*.obj
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.dylib
+
+# 打包输出
+mc-server-manager*
+MinecraftServerManager*
+
+# 版本控制系统文件
+.git/
+.svn/
+.hg/
+.bzr/
+
+# 但保留 .gitignore 本身
+!.gitignore
